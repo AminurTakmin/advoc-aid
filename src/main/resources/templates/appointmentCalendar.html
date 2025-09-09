@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Appointment Calendar - Advocaid</title>
+
+  <!-- Your App’s CSS -->
+  <link rel="stylesheet" th:href="@{/css/styles.css}" />
+  <link rel="stylesheet" th:href="@{/css/tabler-icons.css}" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet" />
+
+  <!-- FullCalendar & Dependencies CSS -->
+  <link
+          rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/jquery-ui-dist/jquery-ui.min.css"
+  />
+  <link
+          rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/fullcalendar@3.10.2/dist/fullcalendar.min.css"
+  />
+
+  <style>
+    body { font-family: 'Poppins', sans-serif; margin: 0; background: #f4f6f9; color: #0f172a }
+    .sidebar { width: 240px; background: #1e293b; color: #fff; height: 100vh; position: fixed; top: 0; left: 0; padding: 1rem; }
+    .sidebar h2 { font-size: 1.6rem; margin-bottom: 2rem; font-weight: bold; }
+    .sidebar a { display: block; color: #94a3b8; margin: 1.2rem 0; text-decoration: none; font-weight: 500; }
+    .sidebar a:hover, .sidebar a.active { color: #fff; background: #334155; padding: 0.5rem 1rem; border-radius: 6px; }
+    .header { margin-left: 240px; height: 80px; background: #fff; padding: 1rem 2rem; display: flex; justify-content: flex-end; align-items: center; box-shadow: 0 1px 5px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 1000; }
+    .profile-wrapper { position: relative; }
+    .profile-img { width: 45px; height: 45px; border-radius: 50%; cursor: pointer; transition: transform 0.2s ease; border: 2px solid #10b981; }
+    .profile-img:hover { transform: scale(1.05); }
+    .dropdown-menu { display: none; position: absolute; right: 0; top: 60px; background: #fff; box-shadow: 0 8px 20px rgba(0,0,0,0.1); border-radius: 10px; min-width: 200px; z-index: 999; padding: 1rem; }
+    .dropdown-menu::before { content: ""; position: absolute; top: -10px; right: 15px; border-width: 10px; border-style: solid; border-color: transparent transparent white transparent; }
+    .main { margin-left: 240px; margin-top: 30px; padding: 2rem; }
+    .card { background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 2rem; }
+    .external-event { padding: 6px; margin-bottom: 5px; color: #fff; font-weight: 500; border-radius: 4px; cursor: move; text-align: center; }
+  </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<div class="sidebar">
+  <h2>Advocaid</h2>
+  <a th:href="@{/userDashboard}"><i class="ti ti-layout-dashboard"></i> Dashboard</a>
+  <a th:href="@{/addCase}"><i class="ti ti-briefcase"></i> Add Case</a>
+  <a th:href="@{/caseInfo}"><i class="ti ti-file-description"></i> Case Info</a>
+  <a th:href="@{/appointmentCalendar}" class="active"><i class="ti ti-calendar"></i> Appointments</a>
+  <a th:href="@{/logout}"><i class="ti ti-logout"></i> Logout</a>
+</div>
+
+<!-- Header -->
+<div class="header">
+  <div class="profile-wrapper">
+    <img th:src="${picture}" alt="User" class="profile-img" onclick="toggleDropdown()" />
+    <div id="profileMenu" class="dropdown-menu">
+      <div class="dropdown-info">
+        <strong th:text="${name}">User Name</strong><br/>
+        <small th:text="${email}">user@example.com</small>
+      </div>
+      <hr/>
+      <a th:href="@{/logout}" class="dropdown-link">Logout</a>
+    </div>
+  </div>
+</div>
+
+<!-- Main Content -->
+<div class="main">
+  <div class="card">
+    <h3 style="color: #0f172a">Case Calendar</h3>
+    <div style="display: flex; flex-wrap: wrap; gap: 2rem;">
+      <!-- Draggable Events Panel -->
+      <div style="flex: 1; min-width: 240px;">
+        <div id="external-events" style="padding: 10px; background: #f0f4f8; border: 1px solid #ccc; border-radius: 6px;">
+          <p style="color: #0f172a"><strong>Events</strong></p>
+          <div class="external-event" style="background:#10b981;">Meeting</div>
+          <div class="external-event" style="background:#3b82f6;">Court Date</div>
+          <div class="external-event" style="background:#ef4444;">Document Submit</div>
+          <label style="margin-top:10px; color: #0f172a">
+            <input type="checkbox" id="drop-remove"> Remove after drop
+          </label>
+        </div>
+      </div>
+      <!-- Calendar -->
+      <div style="flex: 3; min-width: 300px;">
+        <div
+                id="calendar"
+                style="
+              padding: 10px;
+              background: #fff;
+              border-radius: 10px;
+              box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+              /* ensure it's tall enough to see the grid */
+              min-height: 600px;
+            "
+        ></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- JS Libraries (order matters!) -->
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jquery-ui-dist/jquery-ui.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@3.10.2/dist/fullcalendar.min.js"></script>
+
+<!-- Init the draggable external events -->
+<script>
+  $(function() {
+    function initExternalEvents(ele) {
+      ele.each(function() {
+        var eventObject = { title: $.trim($(this).text()) };
+        $(this).data('eventObject', eventObject);
+        $(this).draggable({
+          zIndex:         999,
+          revert:         true,
+          revertDuration: 0
+        });
+      });
+    }
+    initExternalEvents($('#external-events .external-event'));
+  });
+</script>
+
+<!-- Thymeleaf-inlined Calendar setup -->
+<script th:inline="javascript">
+  /*<![CDATA[*/
+  $(function () {
+    $('#calendar').fullCalendar({
+      header: {
+        left:   'prev,next today',
+        center: 'title',
+        right:  'month,agendaWeek,agendaDay'
+      },
+      editable:  true,
+      droppable: true,
+      drop: function(date, allDay) {
+        var originalEvent = $(this).data('eventObject');
+        var copiedEvent   = $.extend({}, originalEvent);
+        copiedEvent.start           = date;
+        copiedEvent.allDay          = allDay;
+        copiedEvent.backgroundColor = $(this).css('background-color');
+        copiedEvent.borderColor     = $(this).css('border-color');
+        $('#calendar').fullCalendar('renderEvent', copiedEvent, true);
+        if ($('#drop-remove').is(':checked')) {
+          $(this).remove();
+        }
+      },
+      events: [
+        /*[# th:each="evt, stat : ${appointments}"]*/
+        {
+          title           : /*[[${evt.title}]]*/,
+          start           : /*[[${evt.date}]]*/,
+          backgroundColor : '#0ea5e9',
+          borderColor     : '#0ea5e9'
+        }/*[(${!stat.last}) ? ',' : '']*/,
+        /*[/]*/
+      ]
+    });
+  });
+  /*]]>*/
+</script>
+
+<!-- Profile dropdown logic -->
+<script>
+  function toggleDropdown() {
+    const menu = document.getElementById('profileMenu');
+    menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
+  }
+  document.addEventListener('click', function (e) {
+    const menu    = document.getElementById('profileMenu');
+    const trigger = document.querySelector('.profile-img');
+    if (!trigger.contains(e.target) && !menu.contains(e.target)) {
+      menu.style.display = 'none';
+    }
+  });
+</script>
+
+<!-- Your other deferred scripts -->
+<script th:src="@{/js/scripts.js}" defer></script>
+<script th:src="@{/js/app.min.js}" defer></script>
+<script th:src="@{/js/dashboard.js}" defer></script>
+<script th:src="@{/js/sidebarmenu.js}" defer></script>
+
+</body>
+</html>

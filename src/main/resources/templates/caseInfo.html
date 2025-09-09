@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Case Info - Advocaid</title>
+
+    <!-- CSS Libraries -->
+    <link rel="stylesheet" th:href="@{/css/styles.css}" />
+    <link rel="stylesheet" th:href="@{/css/tabler-icons.css}" />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet" />
+
+    <!-- JS Libraries -->
+    <script th:src="@{/js/scripts.js}" defer></script>
+    <script th:src="@{/js/app.min.js}" defer></script>
+    <script th:src="@{/js/dashboard.js}" defer></script>
+    <script th:src="@{/js/sidebarmenu.js}" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body { font-family: 'Poppins', sans-serif; margin: 0; background: #f4f6f9; }
+
+        .sidebar { width: 240px; background: #1e293b; color: #fff; height: 100vh; position: fixed; top: 0; left: 0; padding: 1rem; }
+        .sidebar h2 { font-size: 1.6rem; margin-bottom: 2rem; font-weight: bold; }
+        .sidebar a { display: block; color: #94a3b8; margin: 1.2rem 0; text-decoration: none; font-weight: 500; }
+        .sidebar a:hover, .sidebar a.active { color: #fff; background: #334155; padding: 0.5rem 1rem; border-radius: 6px; }
+
+        .header { margin-left: 240px; height: 80px; background: #fff; padding: 1rem 2rem; display: flex; justify-content: flex-end; align-items: center; box-shadow: 0 1px 5px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 1000; }
+
+        .profile-wrapper { position: relative; }
+        .profile-img { width: 45px; height: 45px; border-radius: 50%; cursor: pointer; transition: transform 0.2s ease; border: 2px solid #10b981; }
+        .profile-img:hover { transform: scale(1.05); }
+        .dropdown-menu { display: none; position: absolute; right: 0; top: 60px; background: #fff; box-shadow: 0 8px 20px rgba(0,0,0,0.1); border-radius: 10px; min-width: 200px; z-index: 999; padding: 1rem; }
+        .dropdown-menu::before { content: ""; position: absolute; top: -10px; right: 15px; border-width: 10px; border-style: solid; border-color: transparent transparent white transparent; }
+        .dropdown-info { padding-bottom: 0.5rem; border-bottom: 1px solid #e5e7eb; }
+        .dropdown-info strong { display: block; font-size: 1rem; color: #111827; }
+        .dropdown-info small { color: #6b7280; font-size: 0.875rem; }
+        .dropdown-link { display: block; padding-top: 0.75rem; color: #ef4444; text-decoration: none; font-weight: 600; }
+        .dropdown-link:hover { text-decoration: underline; }
+
+        .main { margin-left: 240px; margin-top: 30px; padding: 2rem; background: #f4f6f9; }
+        .main h2 { margin-bottom: 1.5rem; color: #1e293b; }
+
+        .card-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 1.5rem;
+        }
+        .card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            position: relative;
+            font-family: 'Poppins', sans-serif;
+        }
+        .card h3 {
+            margin-top: 0;
+            margin-bottom: 0.7rem;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #1e293b;
+        }
+        .card p {
+            margin: 0.4rem 0;
+            font-size: 0.95rem;
+            color: #334155;
+        }
+        .card hr {
+            border: none;
+            border-top: 1px solid #e2e8f0;
+            margin: 1rem 0;
+        }
+        .card-buttons {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            display: flex;
+            gap: 0.5rem;
+        }
+        .card-buttons a {
+            background: #2563eb;
+            color: white;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .card-buttons a.delete {
+            background: #dc2626;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<div class="sidebar">
+    <h2>Advocaid</h2>
+    <a th:href="@{/userDashboard}"><i class="ti ti-layout-dashboard"></i> Dashboard</a>
+    <a th:href="@{/addCase}"><i class="ti ti-briefcase"></i> Add Case</a>
+    <a th:href="@{/caseInfo}" class="active"><i class="ti ti-file-description"></i> Case Info</a>
+    <a th:href="@{/appointmentCalendar}"><i class="ti ti-calendar"></i> Appointments</a>
+    <a th:href="@{/logout}"><i class="ti ti-logout"></i> Logout</a>
+</div>
+
+<!-- Header -->
+<div class="header">
+    <div class="profile-wrapper">
+        <div class="profile-dropdown">
+            <img th:src="${picture}" alt="User" class="profile-img" onclick="toggleDropdown()" />
+            <div id="profileMenu" class="dropdown-menu">
+                <div class="dropdown-info">
+                    <strong th:text="${name}">User Name</strong>
+                    <small th:text="${email}">user@example.com</small>
+                </div>
+                <a th:href="@{/logout}" class="dropdown-link">Logout</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content -->
+<div class="main">
+    <h2>Cases</h2>
+
+    <!-- 🔴 Search and Filter Controls -->
+    <!-- 🔴 NEW: Modern Search & Sort UI -->
+    <form th:action="@{/caseInfo}" method="get"
+          style="margin-bottom: 2rem; display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; background: white; padding: 1rem 1.5rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.06);">
+
+        <!-- 🔴 Search Box -->
+        <div style="flex-grow: 1; display: flex; align-items: center; gap: 0.5rem;">
+            <input type="text" name="keyword" placeholder="🔍 Search Case Info..."
+                   th:value="${param.keyword}"
+                   style="padding: 0.6rem 1rem; border-radius: 10px; border: 1px solid #cbd5e1; width: 100%; min-width: 250px; font-size: 0.95rem; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);" />
+        </div>
+
+        <!-- 🔴 Sort Dropdown -->
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <label for="sortBy" style="font-weight: 500; color: #1e293b;">Sort By:</label>
+            <select name="sortBy" id="sortBy"
+                    style="padding: 0.5rem 1rem; border-radius: 10px; border: 1px solid #cbd5e1; font-size: 0.95rem;">
+                <option value="">-- None --</option>
+                <option value="caseNoAsc" th:selected="${param.sortBy == 'caseNoAsc'}">Case No ↑</option>
+                <option value="caseNoDesc" th:selected="${param.sortBy == 'caseNoDesc'}">Case No ↓</option>
+            </select>
+        </div>
+
+        <!-- 🔴 Apply Button -->
+        <button type="submit"
+                style="padding: 0.6rem 1.2rem; background: #2563eb; color: white; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; transition: background 0.2s ease;">
+            🔎 Apply
+        </button>
+    </form>
+
+
+    <div class="card-section">
+        <div class="card" th:each="case : ${cases}">
+            <div class="card-buttons">
+
+                <a th:href="@{/editCase/{id}(id=${case.id})}">Edit</a>
+                <a th:href="@{/deleteCase/{id}(id=${case.id})}" onclick="return confirm('Are you sure you want to delete this case?');" class="delete">Delete</a>
+            </div>
+
+            <h3 th:text="'Case No: ' + ${case.caseNo} + ' / ' + ${case.caseYear}">Case Info</h3>
+            <p><strong>District:</strong> <span th:text="${case.district}"></span></p>
+            <p><strong>Case Type:</strong> <span th:text="${case.caseType}"></span></p>
+            <p><strong>Court Name:</strong> <span th:text="${case.courtName}"></span></p>
+            <p><strong>Filing Date:</strong> <span th:text="${case.filingDate}"></span></p>
+            <p><strong>Case Categories:</strong> <span th:text="${case.caseCategories}"></span></p>
+
+            <hr />
+
+            <p><strong>Client Name:</strong> <span th:text="${case.clientName}"></span></p>
+            <p><strong>Client Phone:</strong> <span th:text="${case.clientPhone}"></span></p>
+            <p><strong>Assign To:</strong> <span th:text="${case.assignTo}"></span></p>
+            <p><strong>Reference No:</strong> <span th:text="${case.referenceNo}"></span></p>
+            <p><strong>File No:</strong> <span th:text="${case.fileNo}"></span></p>
+
+            <hr />
+
+            <p><strong>Opponent Name:</strong> <span th:text="${case.opponentName}"></span></p>
+            <p><strong>Opponent Phone:</strong> <span th:text="${case.opponentPhone}"></span></p>
+            <p><strong>Opponent Advocate:</strong> <span th:text="${case.opponentAdvocate}"></span></p>
+            <p><strong>Opponent Witnesses:</strong> <span th:text="${case.opponentWitness}"></span></p>
+
+            <hr />
+
+            <p><strong>Police Station:</strong> <span th:text="${case.policeStation}"></span></p>
+            <p><strong>FIR No:</strong> <span th:text="${case.firNo}"></span></p>
+            <p><strong>Investigating Officer:</strong> <span th:text="${case.investigatingOfficer}"></span></p>
+            <p><strong>Officer Phone:</strong> <span th:text="${case.officerPhone}"></span></p>
+        </div>
+    </div>
+</div>
+
+<!-- Dropdown JS -->
+<script>
+    function toggleDropdown() {
+        const menu = document.getElementById('profileMenu');
+        menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+    }
+    document.addEventListener('click', function (event) {
+        const menu = document.getElementById('profileMenu');
+        const trigger = document.querySelector('.profile-img');
+        if (!trigger.contains(event.target) && !menu.contains(event.target)) {
+            menu.style.display = 'none';
+        }
+    });
+</script>
+
+</body>
+</html>
