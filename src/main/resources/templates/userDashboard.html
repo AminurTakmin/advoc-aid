@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Advocaid - Legal Dashboard</title>
+
+  <!-- CSS Libraries -->
+  <link rel="stylesheet" th:href="@{/css/styles.css}" />
+  <link rel="stylesheet" th:href="@{/css/tabler-icons.css}" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet" />
+
+  <!-- JS Libraries -->
+  <script th:src="@{/js/scripts.js}" defer></script>
+  <script th:src="@{/js/app.min.js}" defer></script>
+  <script th:src="@{/js/dashboard.js}" defer></script>
+  <script th:src="@{/js/sidebarmenu.js}" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    body { font-family: 'Poppins', sans-serif; margin: 0; background: #f4f6f9; }
+    .sidebar { width: 240px; background: #1e293b; color: #fff; height: 100vh; position: fixed; top: 0; left: 0; padding: 1rem; }
+    .sidebar h2 { font-size: 1.6rem; margin-bottom: 2rem; font-weight: bold; }
+    .sidebar a { display: block; color: #94a3b8; margin: 1.2rem 0; text-decoration: none; font-weight: 500; }
+    .sidebar a:hover, .sidebar a.active { color: #fff; background: #334155; padding: 0.5rem 1rem; border-radius: 6px; }
+
+    .header { margin-left: 240px; height: 80px; background: #fff; padding: 1rem 2rem; display: flex; justify-content: flex-end; align-items: center; box-shadow: 0 1px 5px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 1000; }
+
+    .profile-wrapper { position: relative; }
+    .profile-img { width: 45px; height: 45px; border-radius: 50%; cursor: pointer; transition: transform 0.2s ease; border: 2px solid #10b981; }
+    .profile-img:hover { transform: scale(1.05); }
+    .dropdown-menu { display: none; position: absolute; right: 0; top: 60px; background: #fff; box-shadow: 0 8px 20px rgba(0,0,0,0.1); border-radius: 10px; min-width: 200px; z-index: 999; padding: 1rem; }
+    .dropdown-menu::before { content: ""; position: absolute; top: -10px; right: 15px; border-width: 10px; border-style: solid; border-color: transparent transparent white transparent; }
+    .dropdown-info { padding-bottom: 0.5rem; border-bottom: 1px solid #e5e7eb; }
+    .dropdown-info strong { display: block; font-size: 1rem; color: #111827; }
+    .dropdown-info small { color: #6b7280; font-size: 0.875rem; }
+    .dropdown-link { display: block; padding-top: 0.75rem; color: #ef4444; text-decoration: none; font-weight: 600; }
+    .dropdown-link:hover { text-decoration: underline; }
+
+    .main { margin-left: 240px; margin-top: 30px; padding: 2rem; background: #f4f6f9; }
+    .hero { background: linear-gradient(to right, #0f172a, #1e3a8a); color: white; padding: 2rem; border-radius: 12px; margin-bottom: 2rem;text-align: center; }
+    .hero h1 { font-size: 2.5rem; margin-bottom: 1rem; }
+    .hero p { font-size: 1.1rem; max-width: 600px;margin: 0 auto; }
+    .hero .cta { margin-top: 1rem; display: inline-block; background: #10b981; padding: 0.75rem 1.5rem; border-radius: 6px; color: white; text-decoration: none; font-weight: 600; }
+
+    .card-section { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; }
+    .card { background: white; padding: 1.5rem; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+
+    .year-select-wrapper { margin: 2rem 0 1rem; font-weight: 600; color: #1f2937; }
+    .year-select-wrapper label { display: block; margin-bottom: 0.5rem; }
+    .year-select-wrapper select {
+      appearance: none; background: linear-gradient(to right, #f0fdfa, #e0f2fe);
+      border: 2px solid #94a3b8; border-radius: 10px; padding: 0.75rem 1rem;
+      font-size: 1rem; font-weight: 600; color: #1e293b; width: 200px;
+      background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg fill='gray' height='20' viewBox='0 0 24 24' width='20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 1rem center; background-size: 1rem;
+    }
+
+    .chart-container { background: white; padding: 1.5rem; border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05); max-width: 1100px; width: 100%; height: 70vh; }
+  </style>
+</head>
+<body>
+
+<div class="sidebar">
+  <h2>Advocaid</h2>
+  <a th:href="@{/userDashboard}" class="active"><i class="ti ti-layout-dashboard"></i> Dashboard</a>
+  <a th:href="@{/addCase}"><i class="ti ti-briefcase"></i> Add Cases</a>
+  <a th:href="@{/caseInfo}"><i class="ti ti-users"></i> Cases Info</a>
+  <a th:href="@{/appointmentCalendar}"><i class="ti ti-calendar"></i> Appointments</a>
+  <a th:href="@{/logout}"><i class="ti ti-logout"></i> Logout</a>
+</div>
+
+<div class="header">
+  <div class="profile-wrapper">
+    <div class="profile-dropdown">
+      <img th:src="${picture}" alt="User" class="profile-img" onclick="toggleDropdown()" />
+      <div id="profileMenu" class="dropdown-menu">
+        <div class="dropdown-info">
+          <strong th:text="${name}">User Name</strong>
+          <small th:text="${email}">user@example.com</small>
+        </div>
+        <a th:href="@{/logout}" class="dropdown-link">Logout</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="hero">
+    <h1>AI-powered Legal Management</h1>
+    <p>Advocaid helps you manage cases, clients, and court schedules with intelligent tools designed for modern law practices.</p>
+    <a href="#" class="cta">Get Started</a>
+  </div>
+
+  <div class="card-section">
+    <div class="card"><h3>Active Cases</h3><p style="font-size: 2rem; font-weight: bold;">45</p></div>
+    <div class="card"><h3>Upcoming Hearings</h3><p style="font-size: 2rem; font-weight: bold;">8</p></div>
+    <div class="card"><h3>New Clients This Month</h3><p style="font-size: 2rem; font-weight: bold;">12</p></div>
+  </div>
+
+  <div class="year-select-wrapper">
+
+  </div>
+
+  <div class="chart-container">
+    <canvas id="dashboardChart"></canvas>
+  </div>
+</div>
+
+<script>
+  function toggleDropdown() {
+    const menu = document.getElementById('profileMenu');
+    menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+  }
+  document.addEventListener('click', function (event) {
+    const menu = document.getElementById('profileMenu');
+    const trigger = document.querySelector('.profile-img');
+    if (!trigger.contains(event.target) && !menu.contains(event.target)) {
+      menu.style.display = 'none';
+    }
+  });
+</script>
+
+
+<script th:inline="javascript"> // 🔴 REQUIRED for Thymeleaf inside JS
+const ctx = document.getElementById('dashboardChart').getContext('2d');
+
+const gradientCivil = ctx.createLinearGradient(0, 0, 0, 400);
+gradientCivil.addColorStop(0, '#6366f1'); gradientCivil.addColorStop(1, '#c7d2fe');
+const gradientCriminal = ctx.createLinearGradient(0, 0, 0, 400);
+gradientCriminal.addColorStop(0, '#f97316'); gradientCriminal.addColorStop(1, '#fdba74');
+
+const civilData = [[${civilCounts}]];     // 🔴 Injected civil counts
+const criminalData = [[${criminalCounts}]]; // 🔴 Injected criminal counts
+
+const chart = new Chart(ctx, {
+  type: 'bar',
+  data: {
+    labels: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+    datasets: [
+      {
+        label: 'Civil Cases',
+        data: civilData,
+        backgroundColor: gradientCivil,
+        borderColor: gradientCivil,
+        borderWidth: 2
+      },
+      {
+        label: 'Criminal Cases',
+        data: criminalData,
+        backgroundColor: gradientCriminal,
+        borderColor: gradientCriminal,
+        borderWidth: 2
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      title: { display: true, text: 'Monthly Case Insights (2025)', font: { size: 22, weight: 'bold' } },
+      legend: { position: 'bottom' }
+    },
+    scales: { // 🔴 Set fixed Y-axis scale
+      x: {
+        ticks: { font: { size: 13 }, color: '#334155' }, // 🔴 X-axis label style
+        grid: { color: '#e2e8f0', borderDash: [5, 5] } // 🔴 X-axis grid lines
+      },
+      y: {
+        beginAtZero: true, // 🔴 Y starts at 0
+        min: 0, // 🔴 Set minimum Y
+        max: 50, // 🔴 Set maximum Y
+        ticks: { stepSize: 5, font: { size: 13 }, color: '#334155' }, // 🔴 Tick spacing & style
+        grid: { color: '#f1f5f9', borderDash: [5, 5] } // 🔴 Grid lines
+      }
+    }
+
+  }
+});
+</script>
+
+
+
+
+
+</body>
+</html>

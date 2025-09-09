@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Add Case - Advocaid</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}" />
+    <link rel="stylesheet" th:href="@{/css/tabler-icons.css}" />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet" />
+    <script th:src="@{/js/scripts.js}" defer></script>
+    <script th:src="@{/js/app.min.js}" defer></script>
+    <script th:src="@{/js/dashboard.js}" defer></script>
+    <script th:src="@{/js/sidebarmenu.js}" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Poppins', sans-serif; margin: 0; background: #f4f6f9; }
+        .sidebar { width: 240px; background: #1e293b; color: #fff; height: 100vh; position: fixed; top: 0; left: 0; padding: 1rem; }
+        .sidebar h2 { font-size: 1.6rem; margin-bottom: 2rem; font-weight: bold; }
+        .sidebar a { display: block; color: #94a3b8; margin: 1.2rem 0; text-decoration: none; font-weight: 500; }
+        .sidebar a:hover, .sidebar a.active { color: #fff; background: #334155; padding: 0.5rem 1rem; border-radius: 6px; }
+        .header { margin-left: 240px; height: 80px; background: #fff; padding: 1rem 2rem; display: flex; justify-content: flex-end; align-items: center; box-shadow: 0 1px 5px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 1000; }
+        .profile-wrapper { position: relative; }
+        .profile-img { width: 45px; height: 45px; border-radius: 50%; cursor: pointer; transition: transform 0.2s ease; border: 2px solid #10b981; }
+        .profile-img:hover { transform: scale(1.05); }
+        .dropdown-menu { display: none; position: absolute; right: 0; top: 60px; background: #fff; box-shadow: 0 8px 20px rgba(0,0,0,0.1); border-radius: 10px; min-width: 200px; z-index: 999; padding: 1rem; }
+        .main { margin-left: 240px; margin-top: 30px; padding: 2rem; background: #f4f6f9; }
+        .container { background: white; padding: 2rem 3rem; border-radius: 12px; box-shadow: 0 0 20px rgba(0,0,0,0.06); }
+        .stepper { display: flex; justify-content: space-between; margin-bottom: 2rem; position: relative; }
+        .stepper::before { content: ''; position: absolute; top: 12px; left: 10%; width: 80%; height: 4px; background: #e5e7eb; z-index: 0; }
+        .step { z-index: 1; background: #fff; padding: 1px 12px; border-radius: 20px; border: 2px solid #eab308; color: #111827; font-weight: 600; transition: all 0.3s ease; }
+        .active-step { background: #eab308; color: white !important; border-color: #eab308 !important; }
+        .form-section { display: none; flex-wrap: wrap; gap: 1.5rem; }
+        .form-group { flex: 1 1 45%; display: flex; flex-direction: column; }
+        label { font-weight: 600; margin-bottom: 0.3rem; font-size: 0.95rem; color: #1e293b; }
+        input, select { padding: 0.8rem 1rem; font-size: 1rem; border: 1px solid #e2e8f0; border-radius: 8px; }
+        .tag-input { display: flex; flex-wrap: wrap; gap: 0.5rem; background: #f9fafb; border: 1px solid #e2e8f0; padding: 0.5rem; border-radius: 8px; min-height: 50px; }
+        .tag { background: #1e3a8a; color: white; padding: 5px 10px; border-radius: 20px; font-size: 0.85rem; display: flex; align-items: center; gap: 5px; }
+        .btn { display: block; margin: 2rem auto 0; background: #eab308; color: white; padding: 0.75rem 2rem; font-weight: 600; border: none; border-radius: 8px; font-size: 1rem; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <h2>Advocaid</h2>
+    <a th:href="@{/userDashboard}"><i class="ti ti-layout-dashboard"></i> Dashboard</a>
+    <a th:href="@{/addCase}" class="active"><i class="ti ti-briefcase"></i> Add Case</a>
+    <a th:href="@{/caseInfo}"><i class="ti ti-users"></i>Cases Info</a>
+    <a th:href="@{/appointmentCalendar}"><i class="ti ti-calendar"></i> Appointments</a>
+    <a th:href="@{/logout}"><i class="ti ti-logout"></i> Logout</a>
+</div>
+
+<div class="header">
+    <div class="profile-wrapper">
+        <div class="profile-dropdown">
+            <img th:src="${picture}" alt="User" class="profile-img" onclick="toggleDropdown()" />
+            <div id="profileMenu" class="dropdown-menu">
+                <div class="dropdown-info">
+                    <strong th:text="${name}">User Name</strong>
+                    <small th:text="${email}">user@example.com</small>
+                </div>
+                <a th:href="@{/logout}" class="dropdown-link">Logout</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="main">
+    <div class="container">
+        <h2>Special Tribunal Court</h2>
+        <div class="stepper">
+            <div class="step active-step" id="stepIndicator1">Case Info</div>
+            <div class="step" id="stepIndicator2">Client Info</div>
+            <div class="step" id="stepIndicator3">More Info</div>
+            <div class="step" id="stepIndicator4">Finish</div>
+        </div>
+
+        <form th:action="@{/submitCase}" th:object="${caseObj}" method="post" onsubmit="return validateAllSteps()">
+            <input type="hidden" th:if="${caseObj.id != null}" th:field="*{id}" /> <!-- 🔴 Only render if editing -->
+            <input type="hidden" th:field="*{userEmail}" />
+
+            <div class="form-section" id="step1" style="display: flex;">
+                <div class="form-group"><label>District</label><select th:field="*{district}" required><option value="" disabled selected>Select</option><option value="Dhaka">Dhaka</option><option value="Chittagong">Chittagong</option></select></div>
+                <div class="form-group"><label>Case Category</label><div class="tag-input" id="categoryTags"><input type="text" placeholder="Add Category" onkeydown="addTag(event, 'categoryTags', 'caseCategories')" /></div><div id="caseCategoriesHidden"></div></div>
+                <div class="form-group"><label>Case Type</label><select th:field="*{caseType}" required><option value="" disabled selected>Select</option><option value="Civil">Civil</option><option value="Criminal">Criminal</option></select></div>
+                <div class="form-group"><label>Court Name</label><input type="text" th:field="*{courtName}" required /></div>
+                <div class="form-group"><label>Case No</label><input type="text" th:field="*{caseNo}" required /></div>
+                <div class="form-group"><label>Case Year</label><input type="text" th:field="*{caseYear}" required /></div>
+                <div class="form-group"><label>Filing Date</label><input type="date" th:field="*{filingDate}" required /></div>
+                <div style="flex: 1 1 100%"><button class="btn" type="button" onclick="nextStep(1)">Next</button></div>
+            </div>
+
+            <div class="form-section" id="step2">
+                <div class="section-title">Client & Opponent</div>
+                <div class="form-group"><label>Client Name</label><input type="text" th:field="*{clientName}" required /></div>
+                <div class="form-group"><label>Client Phone</label><input type="text" th:field="*{clientPhone}" required /></div>
+                <div class="form-group"><label>Assign To</label><input type="text" th:field="*{assignTo}" required /></div>
+                <div class="form-group"><label>Reference No</label><input type="text" th:field="*{referenceNo}" required /></div>
+                <div class="form-group"><label>File No</label><input type="text" th:field="*{fileNo}" required /></div>
+                <div class="form-group"><label>Opponent Name</label><input type="text" th:field="*{opponentName}" required /></div>
+                <div class="form-group"><label>Opponent Phone</label><input type="text" th:field="*{opponentPhone}" required /></div>
+                <div class="form-group"><label>Opponent Advocate</label><input type="text" th:field="*{opponentAdvocate}" required /></div>
+                <div class="form-group"><label>Opponent Witness</label><div class="tag-input" id="witnessTags"><input type="text" placeholder="Add Witness" onkeydown="addTag(event, 'witnessTags', 'opponentWitness')" /></div><div id="opponentWitnessHidden"></div></div>
+                <div style="flex: 1 1 100%"><button class="btn" type="button" onclick="nextStep(2)">Next</button></div>
+            </div>
+            <div class="form-section" id="step3">
+                <div class="section-title">Advanced Info</div>
+                <div class="form-group"><label>Police Station</label><input type="text" th:field="*{policeStation}" required /></div>
+                <div class="form-group"><label>FIR No</label><input type="text" th:field="*{firNo}" required /></div>
+                <div class="form-group"><label>Investigating Officer</label><input type="text" th:field="*{investigatingOfficer}" required /></div>
+                <div class="form-group"><label>Officer Phone</label><input type="text" th:field="*{officerPhone}" required /></div>
+                <div style="flex: 1 1 100%"><button class="btn" type="button" onclick="openPreview()">Submit Case</button></div>
+            </div>
+
+            <!-- Hidden dynamic fields (for tag inputs) -->
+            <div style="display: none;">
+                <input type="hidden" th:field="*{caseCategories}" />
+                <input type="hidden" th:field="*{opponentWitness}" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Preview Modal -->
+<div id="previewModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:9999; justify-content:center; align-items:center;">
+    <div style="background:#1e293b; color:#fff; padding:2rem; border-radius:10px; max-width:700px; width:90%; max-height:90vh; overflow-y:auto; box-shadow:0 10px 30px rgba(0,0,0,0.4); position:relative;">
+        <h2 style="margin-bottom:1rem; text-align:center;">Case Data</h2>
+        <div id="previewContent" style="font-size:0.95rem; line-height:1.6;"></div>
+        <div style="margin-top:2rem; text-align:right;">
+            <button onclick="document.getElementById('previewModal').style.display='none'" style="background:#ef4444; color:white; padding:0.5rem 1rem; border:none; border-radius:6px; margin-right:1rem; cursor:pointer;">Close</button>
+            <button onclick="document.querySelector('form').submit()" style="background:#22c55e; color:white; padding:0.5rem 1rem; border:none; border-radius:6px; cursor:pointer;">Confirm & Submit</button>
+        </div>
+    </div>
+</div>
+
+<!-- JS Scripts -->
+<script th:inline="javascript">
+    const existingCategories = /*[[${categoryList}]]*/ [];
+    const existingWitnesses = /*[[${witnessList}]]*/ [];
+
+    function renderTags(list, containerId, fieldName) {
+        const container = document.getElementById(containerId);
+        const hiddenContainer = document.getElementById(fieldName + "Hidden");
+        list.forEach((val, index) => {
+            const tag = document.createElement("div");
+            tag.className = "tag";
+            tag.innerHTML = `${val} <button onclick="removeTag(this, '${containerId}', '${fieldName}')">&times;</button>`;
+            container.insertBefore(tag, container.querySelector("input"));
+            const hidden = document.createElement("input");
+            hidden.type = "hidden";
+            hidden.name = `${fieldName}[${index}]`;
+            hidden.value = val;
+            hiddenContainer.appendChild(hidden);
+        });
+    }
+
+    renderTags(existingCategories, "categoryTags", "caseCategories");
+    renderTags(existingWitnesses, "witnessTags", "opponentWitness");
+</script>
+
+<script>
+    function toggleDropdown() {
+        const menu = document.getElementById('profileMenu');
+        menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+    }
+
+    document.addEventListener('click', function (event) {
+        const menu = document.getElementById('profileMenu');
+        const trigger = document.querySelector('.profile-img');
+        if (!trigger.contains(event.target) && !menu.contains(event.target)) {
+            menu.style.display = 'none';
+        }
+    });
+
+    function nextStep(step) {
+        const current = document.getElementById('step' + step);
+        const inputs = current.querySelectorAll('input, select');
+        for (let input of inputs) {
+            if (!input.checkValidity()) {
+                alert("Please fill all required fields in this section.");
+                return;
+            }
+        }
+        current.style.display = 'none';
+        const next = document.getElementById('step' + (step + 1));
+        if (next) next.style.display = 'flex';
+        document.getElementById('stepIndicator' + step).classList.remove('active-step');
+        const nextIndicator = document.getElementById('stepIndicator' + (step + 1));
+        if (nextIndicator) nextIndicator.classList.add('active-step');
+    }
+
+    function addTag(e, boxId, fieldName) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const value = e.target.value.trim();
+            if (!value) return;
+            const box = document.getElementById(boxId);
+            const tag = document.createElement('div');
+            tag.className = 'tag';
+            tag.innerHTML = `${value} <button onclick="removeTag(this, '${boxId}', '${fieldName}')">&times;</button>`;
+            box.insertBefore(tag, e.target);
+            addHiddenInput(fieldName, value);
+            e.target.value = '';
+        }
+    }
+
+    function addHiddenInput(fieldName, value) {
+        const container = document.getElementById(fieldName + 'Hidden');
+        const index = container.children.length;
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = `${fieldName}[${index}]`;
+        input.value = value;
+        container.appendChild(input);
+    }
+
+    function removeTag(btn, boxId, fieldName) {
+        const value = btn.parentElement.childNodes[0].nodeValue.trim();
+        btn.parentElement.remove();
+        const container = document.getElementById(fieldName + 'Hidden');
+        const inputs = container.querySelectorAll(`input[name^="${fieldName}"]`);
+        inputs.forEach(input => {
+            if (input.value === value) container.removeChild(input);
+        });
+        Array.from(container.children).forEach((input, i) => input.name = `${fieldName}[${i}]`);
+    }
+
+    function openPreview() {
+        const stepLabels = {
+            "district": "District", "caseType": "Case Type", "courtName": "Court Name",
+            "caseNo": "Case No", "caseYear": "Case Year", "filingDate": "Filing Date",
+            "clientName": "Client Name", "clientPhone": "Client Phone", "assignTo": "Assign To",
+            "referenceNo": "Reference No", "fileNo": "File No", "opponentName": "Opponent Name",
+            "opponentPhone": "Opponent Phone", "opponentAdvocate": "Opponent Advocate",
+            "policeStation": "Police Station", "firNo": "FIR No", "investigatingOfficer": "Investigating Officer",
+            "officerPhone": "Officer Phone", "caseCategories": "Case Categories", "opponentWitness": "Opponent Witnesses"
+        };
+
+        const form = document.querySelector('form');
+        let html = `<h4><u>Case Info</u></h4><ul style="padding-left:1.2rem;">`;
+        ["district", "caseType", "courtName", "caseNo", "caseYear", "filingDate"].forEach(field => {
+            const input = form.querySelector(`[name="${field}"]`);
+            if (input && input.value) html += `<li><strong>${stepLabels[field]}:</strong> ${input.value}</li>`;
+        });
+        const caseCategories = Array.from(document.querySelectorAll('#categoryTags .tag')).map(t => t.childNodes[0].nodeValue.trim());
+        if (caseCategories.length) html += `<li><strong>Case Categories:</strong> ${caseCategories.join(', ')}</li>`;
+        html += `</ul><h4><u>Client & Opponent Info</u></h4><ul style="padding-left:1.2rem;">`;
+        ["clientName", "clientPhone", "assignTo", "referenceNo", "fileNo", "opponentName", "opponentPhone", "opponentAdvocate"].forEach(field => {
+            const input = form.querySelector(`[name="${field}"]`);
+            if (input && input.value) html += `<li><strong>${stepLabels[field]}:</strong> ${input.value}</li>`;
+        });
+        const witnesses = Array.from(document.querySelectorAll('#witnessTags .tag')).map(t => t.childNodes[0].nodeValue.trim());
+        if (witnesses.length) html += `<li><strong>Opponent Witnesses:</strong> ${witnesses.join(', ')}</li>`;
+        html += `</ul><h4><u>More Info</u></h4><ul style="padding-left:1.2rem;">`;
+        ["policeStation", "firNo", "investigatingOfficer", "officerPhone"].forEach(field => {
+            const input = form.querySelector(`[name="${field}"]`);
+            if (input && input.value) html += `<li><strong>${stepLabels[field]}:</strong> ${input.value}</li>`;
+        });
+        html += `</ul>`;
+        document.getElementById('previewContent').innerHTML = html;
+        document.getElementById('previewModal').style.display = 'flex';
+    }
+</script>
+
+</body>
+</html>

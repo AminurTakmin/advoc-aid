@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Dashboard</title>
+</head>
+<body>
+<h1>Welcome, <span th:text="${name}"></span></h1>
+<p>Email: <span th:text="${email}"></span></p>
+<img th:src="${picture}" alt="Profile Picture" width="100"/>
+
+<img src="/images/logos/logo.png" alt="logo" width="200"/>
+
+
+<br><br>
+<form th:action="@{/logout}" method="get">
+    <button type="submit" class="btn btn-danger">Logout</button>
+</form>
+</body>
+</html>

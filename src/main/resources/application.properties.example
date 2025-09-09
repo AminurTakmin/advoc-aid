@@ -1,0 +1,4 @@
+spring.security.oauth2.client.registration.google.client-id=__FILL_ME__
+spring.security.oauth2.client.registration.google.client-secret=__FILL_ME__
+spring.security.oauth2.client.registration.google.scope=profile,email
+spring.security.oauth2.client.registration.google.redirect-uri={baseUrl}/login/oauth2/code/{registrationId}

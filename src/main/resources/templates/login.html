@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>XATTORNEY Login</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+
+
+<section class="login-main">
+    <div class="login-left">
+
+        <h1>Sign In</h1>
+        <p class="text-center">Login to your account</p>
+
+        <!-- Alert messages -->
+        <div class="alert alert-primary" role="alert" th:if="${param.register != null}">
+            Thanks for your registration. Please log in!
+        </div>
+        <div class="alert alert-primary" role="alert" th:if="${param.logout != null}">
+            You have successfully logged out!
+        </div>
+        <div class="alert alert-danger" role="alert" th:if="${param.error != null}">
+            Email or password invalid. Please try again!
+        </div>
+
+        <!-- Login Form -->
+        <form th:action="@{/login}" th:object="${login}" method="post">
+            <input type="email" th:field="*{email}" placeholder="Enter Email" required />
+            <input type="password" th:field="*{password}" placeholder="Enter Password" required />
+
+            <div class="form-options">
+                <label><input type="checkbox" th:field="*{rememberMe}" checked /> Remember this Device</label>
+                <a href="">Forgot Password?</a>
+
+            </div>
+
+            <input type="submit" class="btn btn-login" value="Log In" />
+        </form>
+
+        <!-- Google Login -->
+        <div style="margin-top: 20px">
+            <a href="/oauth2/authorization/google" class="btn btn-google">Login with Google</a>
+        </div>
+
+        <!-- Register Link -->
+        <div class="toggle" style="margin-top: 15px;">
+            Don't have an account? <a class="text-primary bold ms-2" href="/registration" style="color: #f1c40f;">Create an account</a>
+        </div>
+
+    </div>
+
+    <div class="login-right">
+        <img src="/images/backgrounds/court.png" alt="court" width="400px" height="400px"/>
+    </div>
+</section>
+
+
+</body>
+</html>
